@@ -8,11 +8,16 @@
       font-family: Arial, sans-serif;
       margin: 20px;
       background-color: #f4f4f4;
+      scroll-behavior: smooth;
     }
-    h1, h2 {
+    h1, h2, h3 {
+      margin: 0;
+    }
+    h1 {
       text-align: center;
+      margin-bottom: 20px;
     }
-    form, #history, #compareSection {
+    form, #history, #compareSection, #eosCalcContainer {
       background-color: #fff;
       padding: 20px;
       border-radius: 8px;
@@ -31,7 +36,8 @@
     }
     input[type="text"],
     input[type="number"],
-    textarea {
+    textarea,
+    select {
       width: 100%;
       padding: 8px;
       box-sizing: border-box;
@@ -43,14 +49,10 @@
     }
     .horizontal-group {
       display: flex;
-      justify-content: space-between;
+      gap: 10px;
     }
     .horizontal-group > div {
       flex: 1;
-      margin-right: 10px;
-    }
-    .horizontal-group > div:last-child {
-      margin-right: 0;
     }
     .tooltip-container {
       display: inline-block;
@@ -78,17 +80,17 @@
     }
     button {
       padding: 10px 15px;
-      background-color: #007BFF;
       border: none;
       color: #fff;
       border-radius: 4px;
       cursor: pointer;
-      margin-right: 10px;
       margin-top: 5px;
+      margin-right: 10px;
     }
-    button:hover {
-      background-color: #0056b3;
-    }
+    /* Цветовые классы кнопок */
+    .btn-green { background-color: #28a745; }
+    .btn-red { background-color: #dc3545; }
+    .btn-blue { background-color: #007BFF; }
     .record {
       border-bottom: 1px solid #ddd;
       padding: 10px 0;
@@ -99,28 +101,12 @@
     .record:last-child {
       border-bottom: none;
     }
-    .record-content {
-      flex: 1;
-    }
     .record input[type="checkbox"] {
       margin-right: 10px;
-    }
-    .delete-btn {
-      background-color: #dc3545;
-    }
-    .delete-btn:hover {
-      background-color: #c82333;
-    }
-    .export-record-btn {
-      background-color: #28a745;
-    }
-    .export-record-btn:hover {
-      background-color: #218838;
     }
     #compareSection {
       display: none;
     }
-    /* Стили для таблицы сравнения */
     table.compare-table {
       width: 100%;
       border-collapse: collapse;
@@ -136,10 +122,55 @@
       background-color: #007BFF;
       color: #fff;
     }
+    details {
+      transition: max-height 0.3s ease;
+      overflow: hidden;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 5px;
+      background-color: #f9f9f9;
+    }
+    details[open] {
+      max-height: 1000px;
+    }
+    details:not([open]) {
+      max-height: 30px;
+    }
+    summary {
+      font-weight: bold;
+      cursor: pointer;
+      padding: 5px;
+    }
+    /* Стили калькулятора ЭОС */
+    #eosCalcContainer {
+      margin-top: 20px;
+    }
+    #eosCalcContainer h3 {
+      font-size: 1.2em;
+      text-align: left;
+      margin-bottom: 10px;
+    }
+    #eosCalcFields {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    #eosCalcFields > div {
+      flex: 1;
+    }
+    #eosCalcControl {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    #eosCalcResult {
+      font-size: 1.1em;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
-
   <h1>Интерпретация ЭКГ</h1>
 
   <form id="ekgForm">
@@ -244,19 +275,60 @@
       </datalist>
     </div>
 
+    <!-- Калькулятор ЭОС -->
+    <div id="eosCalcContainer">
+      <h3>Калькулятор ЭОС</h3>
+      <div id="eosCalcFields" class="horizontal-group">
+        <div>
+          <label for="otv1">Отведение 1:</label>
+          <select id="otv1">
+            <option value="0">aVR</option>
+            <option value="1">aVL</option>
+            <option value="2">aVF</option>
+            <option value="3" selected>I</option>
+            <option value="4">II</option>
+            <option value="5">III</option>
+          </select>
+        </div>
+        <div>
+          <label for="val1">Высота R – Глубина S 1:</label>
+          <input type="text" id="val1" maxlength="4" size="4">
+        </div>
+        <div>
+          <label for="otv2">Отведение 2:</label>
+          <select id="otv2">
+            <option value="0">aVR</option>
+            <option value="1">aVL</option>
+            <option value="2">aVF</option>
+            <option value="3">I</option>
+            <option value="4" selected>II</option>
+            <option value="5">III</option>
+          </select>
+        </div>
+        <div>
+          <label for="val2">Высота R – Глубина S 2:</label>
+          <input type="text" id="val2" maxlength="4" size="4">
+        </div>
+      </div>
+      <div id="eosCalcControl" style="display: flex; align-items: center; gap: 10px;">
+        <button type="button" onclick="calcEos();" class="btn-blue">Подсчитать ЭОС</button>
+        <div id="eosCalcResult">Результат: -</div>
+      </div>
+    </div>
+
     <!-- 4. Р: ширина, амплитуда, морфология -->
     <div class="form-group">
       <label>
         4. Р:
         <span class="tooltip-container">?
           <div class="tooltip-content">
-            Выберите характеристики зубцов Р: ширина, амплитуда и морфология.
+            Выберите характеристики зубца Р: ширина (например, 0,12 с), амплитуда и морфология.
           </div>
         </span>
       </label>
       <div class="horizontal-group">
         <div>
-          <label for="pWidth">Ширина зубца P:</label>
+          <label for="pWidth">Ширина:</label>
           <input type="text" id="pWidth" name="pWidth" list="pWidthList">
           <datalist id="pWidthList">
             <option value="Нормальная (0,12 с)">
@@ -448,28 +520,41 @@
       <textarea id="conclusion" name="conclusion" rows="3"></textarea>
     </div>
 
-    <!-- Кнопки формы -->
-    <button type="submit">Сохранить интерпретацию</button>
-    <button type="button" id="clearForm">Очистить форму</button>
-    <button type="button" id="exportWord">Экспорт текущей записи в Word</button>
+    <!-- Кнопки формы (порядок: Сохранить интерпретацию, Экспорт текущей записи, Очистить форму) -->
+    <button type="submit" class="btn-green">Сохранить интерпретацию</button>
+    <button type="button" id="exportWord" class="btn-blue">Экспорт текущей записи в Word</button>
+    <button type="button" id="clearForm" class="btn-red">Очистить форму</button>
   </form>
 
-  <!-- Раздел истории -->
+  <!-- Блок истории -->
   <div id="history">
     <h2>История интерпретаций</h2>
     <div id="historyList"></div>
-    <button type="button" id="exportHistory">Экспорт всей истории в Word</button>
-    <button type="button" id="exportSelected">Экспорт выделенных записей в Word</button>
-    <button type="button" id="compareBtn">Сравнить выбранные</button>
-    <button type="button" id="clearHistory">Очистить историю</button>
+    <!-- Верхний ряд кнопок истории -->
+    <div id="historyButtonsTop" style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button type="button" id="exportHistory" class="btn-green">Экспорт всей истории в Word</button>
+      <button type="button" id="exportSelected" class="btn-green">Экспорт выделенных записей в Word</button>
+      <button type="button" id="compareBtn" class="btn-blue">Сравнить выбранные</button>
+    </div>
+    <!-- Нижний ряд кнопок истории -->
+    <div id="historyButtonsBottom" style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+      <button type="button" id="deleteSelected" class="btn-red">Удалить выбранные</button>
+      <button type="button" id="clearHistory" class="btn-red">Очистить историю</button>
+    </div>
   </div>
 
-  <!-- Раздел сравнения -->
+  <!-- Секция сравнения -->
   <div id="compareSection">
     <h2>Сравнение результатов</h2>
     <div id="compareContainer"></div>
-    <button type="button" id="exportCompare">Экспорт сравнения в Word</button>
-    <button type="button" id="closeCompare">Закрыть сравнение</button>
+    <button type="button" id="exportCompare" class="btn-green">Экспорт сравнения в Word</button>
+    <button type="button" id="closeCompare" class="btn-blue">Закрыть сравнение</button>
+  </div>
+
+  <!-- Блок JSON-экспорта и импорта внизу страницы -->
+  <div id="jsonButtons" style="display:flex; gap:10px; justify-content:center; margin:20px 0;">
+    <button type="button" id="exportJSON" class="btn-green">Экспорт истории в JSON</button>
+    <button type="button" id="importJSONBtn" class="btn-green">Импортировать и добавить истории из JSON</button>
   </div>
 
   <script>
@@ -492,6 +577,41 @@
       });
     }
     qrsTypeInput.addEventListener('change', updateQrsDurationList);
+
+    // Функция для получения даты и времени регистрации с двоеточием в формате времени
+    function getFormattedDateTime() {
+      const now = new Date();
+      const day = ("0" + now.getDate()).slice(-2);
+      const month = ("0" + (now.getMonth() + 1)).slice(-2);
+      const year = now.getFullYear();
+      const hours = ("0" + now.getHours()).slice(-2);
+      const minutes = ("0" + now.getMinutes()).slice(-2);
+      return { date: `${day}.${month}.${year}`, time: `${hours}:${minutes}` };
+    }
+
+    // Карта соответствия для экспорта (ключ: внутреннее имя, значение: заголовок)
+    const exportMap = {
+      fio: "ФИО пациента",
+      voltage: "Оценка вольтажа",
+      waves: "Наличие волн (P, f, F)",
+      heartRate: "ЧСС",
+      rrP: "Регулярность Р-Р",
+      rrR: "Регулярность R-R",
+      pQrsRelation: "Связь Р с QRS",
+      eos: "ЭОС",
+      pWidth: "Р (ширина)",
+      pAmplitude: "Р (амплитуда)",
+      pMorphology: "Р (морфология)",
+      prInterval: "Интервал PR",
+      prSegment: "Сегмент PR",
+      qrsType: "Комплекс QRS",
+      stSegment: "Сегмент ST",
+      tWave: "Т-волна",
+      qtInterval: "Интервал QT",
+      uWave: "U-волна",
+      otherSigns: "Другие признаки",
+      conclusion: "Заключение"
+    };
 
     // Экспорт текущей записи из формы в Word
     function exportToWord() {
@@ -529,13 +649,33 @@
                    "<head><meta charset='utf-8'><title>Экспорт ЭКГ</title></head><body>";
       let footer = "</body></html>";
       let sourceHTML = header + content + footer;
+      const dateTime = getFormattedDateTime();
+      let fileName = `ЭКГ_${document.getElementById('fio').value}_${dateTime.date}_${dateTime.time}.doc`;
       let source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
       let fileDownload = document.createElement("a");
       document.body.appendChild(fileDownload);
       fileDownload.href = source;
-      fileDownload.download = 'ЭКГ_интерпретация.doc';
+      fileDownload.download = fileName;
       fileDownload.click();
       document.body.removeChild(fileDownload);
+    }
+
+    // Универсальная функция экспорта записи (используется для истории и выбранных записей)
+    function exportRecordContent(record) {
+      let content = `<h1 style="text-align:center;">Интерпретация ЭКГ</h1>`;
+      content += `<h3>${record.fio}, ${record.date} ${record.time}</h3>`;
+      content += `<table border="1" cellspacing="0" cellpadding="5" style="width:100%; border-collapse:collapse;">`;
+      for (let key in exportMap) {
+        if(key in record) {
+          if(key === "qrsType") {
+            content += `<tr><td><strong>${exportMap[key]}</strong></td><td>${record.qrsType} (${record.qrsDuration})</td></tr>`;
+          } else {
+            content += `<tr><td><strong>${exportMap[key]}</strong></td><td>${record[key]}</td></tr>`;
+          }
+        }
+      }
+      content += `</table>`;
+      return content;
     }
 
     // Экспорт всей истории в Word
@@ -547,28 +687,8 @@
       }
       let content = `<h1 style="text-align:center;">История интерпретаций ЭКГ</h1>`;
       historyData.forEach(record => {
-        content += `<h3>${record.fio}, ${record.date}</h3>`;
-        content += `<table border="1" cellspacing="0" cellpadding="5" style="width:100%; border-collapse:collapse; margin-bottom:20px;">`;
-        content += `<tr><td><strong>Оценка вольтажа</strong></td><td>${record.voltage}</td></tr>`;
-        content += `<tr><td><strong>Наличие волн (P, f, F)</strong></td><td>${record.waves}</td></tr>`;
-        content += `<tr><td><strong>ЧСС</strong></td><td>${record.heartRate}</td></tr>`;
-        content += `<tr><td><strong>Регулярность Р-Р</strong></td><td>${record.rrP}</td></tr>`;
-        content += `<tr><td><strong>Регулярность R-R</strong></td><td>${record.rrR}</td></tr>`;
-        content += `<tr><td><strong>Связь Р с QRS</strong></td><td>${record.pQrsRelation}</td></tr>`;
-        content += `<tr><td><strong>ЭОС</strong></td><td>${record.eos}</td></tr>`;
-        content += `<tr><td><strong>Р (ширина)</strong></td><td>${record.pWidth}</td></tr>`;
-        content += `<tr><td><strong>Р (амплитуда)</strong></td><td>${record.pAmplitude}</td></tr>`;
-        content += `<tr><td><strong>Р (морфология)</strong></td><td>${record.pMorphology}</td></tr>`;
-        content += `<tr><td><strong>Интервал PR</strong></td><td>${record.prInterval}</td></tr>`;
-        content += `<tr><td><strong>Сегмент PR</strong></td><td>${record.prSegment}</td></tr>`;
-        content += `<tr><td><strong>Комплекс QRS</strong></td><td>${record.qrsType} (${record.qrsDuration})</td></tr>`;
-        content += `<tr><td><strong>Сегмент ST</strong></td><td>${record.stSegment}</td></tr>`;
-        content += `<tr><td><strong>Т-волна</strong></td><td>${record.tWave}</td></tr>`;
-        content += `<tr><td><strong>Интервал QT</strong></td><td>${record.qtInterval}</td></tr>`;
-        content += `<tr><td><strong>U-волна</strong></td><td>${record.uWave}</td></tr>`;
-        content += `<tr><td><strong>Другие признаки</strong></td><td>${record.otherSigns}</td></tr>`;
-        content += `<tr><td><strong>Заключение</strong></td><td>${record.conclusion}</td></tr>`;
-        content += `</table>`;
+        content += exportRecordContent(record);
+        content += `<br>`;
       });
       let header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
                    "xmlns:w='urn:schemas-microsoft-com:office:word' " +
@@ -576,11 +696,13 @@
                    "<head><meta charset='utf-8'><title>Экспорт Истории ЭКГ</title></head><body>";
       let footer = "</body></html>";
       let sourceHTML = header + content + footer;
+      const dateTime = getFormattedDateTime();
+      let fileName = `ЭКГ_История_${dateTime.date}_${dateTime.time}.doc`;
       let source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
       let fileDownload = document.createElement("a");
       document.body.appendChild(fileDownload);
       fileDownload.href = source;
-      fileDownload.download = 'История_ЭКГ_интерпретаций.doc';
+      fileDownload.download = fileName;
       fileDownload.click();
       document.body.removeChild(fileDownload);
     }
@@ -597,28 +719,8 @@
       checkboxes.forEach(cb => {
         const index = cb.getAttribute('data-index');
         const record = historyData[index];
-        content += `<h3>${record.fio}, ${record.date}</h3>`;
-        content += `<table border="1" cellspacing="0" cellpadding="5" style="width:100%; border-collapse:collapse; margin-bottom:20px;">`;
-        content += `<tr><td><strong>Оценка вольтажа</strong></td><td>${record.voltage}</td></tr>`;
-        content += `<tr><td><strong>Наличие волн (P, f, F)</strong></td><td>${record.waves}</td></tr>`;
-        content += `<tr><td><strong>ЧСС</strong></td><td>${record.heartRate}</td></tr>`;
-        content += `<tr><td><strong>Регулярность Р-Р</strong></td><td>${record.rrP}</td></tr>`;
-        content += `<tr><td><strong>Регулярность R-R</strong></td><td>${record.rrR}</td></tr>`;
-        content += `<tr><td><strong>Связь Р с QRS</strong></td><td>${record.pQrsRelation}</td></tr>`;
-        content += `<tr><td><strong>ЭОС</strong></td><td>${record.eos}</td></tr>`;
-        content += `<tr><td><strong>Р (ширина)</strong></td><td>${record.pWidth}</td></tr>`;
-        content += `<tr><td><strong>Р (амплитуда)</strong></td><td>${record.pAmplitude}</td></tr>`;
-        content += `<tr><td><strong>Р (морфология)</strong></td><td>${record.pMorphology}</td></tr>`;
-        content += `<tr><td><strong>Интервал PR</strong></td><td>${record.prInterval}</td></tr>`;
-        content += `<tr><td><strong>Сегмент PR</strong></td><td>${record.prSegment}</td></tr>`;
-        content += `<tr><td><strong>Комплекс QRS</strong></td><td>${record.qrsType} (${record.qrsDuration})</td></tr>`;
-        content += `<tr><td><strong>Сегмент ST</strong></td><td>${record.stSegment}</td></tr>`;
-        content += `<tr><td><strong>Т-волна</strong></td><td>${record.tWave}</td></tr>`;
-        content += `<tr><td><strong>Интервал QT</strong></td><td>${record.qtInterval}</td></tr>`;
-        content += `<tr><td><strong>U-волна</strong></td><td>${record.uWave}</td></tr>`;
-        content += `<tr><td><strong>Другие признаки</strong></td><td>${record.otherSigns}</td></tr>`;
-        content += `<tr><td><strong>Заключение</strong></td><td>${record.conclusion}</td></tr>`;
-        content += `</table>`;
+        content += exportRecordContent(record);
+        content += `<br>`;
       });
       let header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
                    "xmlns:w='urn:schemas-microsoft-com:office:word' " +
@@ -626,11 +728,13 @@
                    "<head><meta charset='utf-8'><title>Экспорт Выбранных ЭКГ</title></head><body>";
       let footer = "</body></html>";
       let sourceHTML = header + content + footer;
+      const dateTime = getFormattedDateTime();
+      let fileName = `ЭКГ_Выбранные_${dateTime.date}_${dateTime.time}.doc`;
       let source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
       let fileDownload = document.createElement("a");
       document.body.appendChild(fileDownload);
       fileDownload.href = source;
-      fileDownload.download = 'Выбранные_ЭКГ_интерпретации.doc';
+      fileDownload.download = fileName;
       fileDownload.click();
       document.body.removeChild(fileDownload);
     }
@@ -650,61 +754,161 @@
                    "<head><meta charset='utf-8'><title>Экспорт Сравнения ЭКГ</title></head><body>";
       let footer = "</body></html>";
       let sourceHTML = header + content + footer;
+      const dateTime = getFormattedDateTime();
+      let fileName = `ЭКГ_Сравнение_${dateTime.date}_${dateTime.time}.doc`;
       let source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
       let fileDownload = document.createElement("a");
       document.body.appendChild(fileDownload);
       fileDownload.href = source;
-      fileDownload.download = 'Сравнение_ЭКГ_интерпретаций.doc';
+      fileDownload.download = fileName;
       fileDownload.click();
       document.body.removeChild(fileDownload);
     }
 
-    // Функции для работы с историей интерпретаций
-    const form = document.getElementById('ekgForm');
-    const historyList = document.getElementById('historyList');
-    const compareBtn = document.getElementById('compareBtn');
-    const compareSection = document.getElementById('compareSection');
-    const compareContainer = document.getElementById('compareContainer');
-    const clearFormBtn = document.getElementById('clearForm');
-    const exportWordBtn = document.getElementById('exportWord');
-    const exportHistoryBtn = document.getElementById('exportHistory');
-    const exportSelectedBtn = document.getElementById('exportSelected');
-
-    function getFormattedDate() {
-      const now = new Date();
-      const day = ("0" + now.getDate()).slice(-2);
-      const month = ("0" + (now.getMonth() + 1)).slice(-2);
-      const year = now.getFullYear();
-      return `${day}.${month}.${year}`;
+    // Экспорт истории в JSON
+    function exportHistoryToJSON() {
+      const historyData = JSON.parse(localStorage.getItem('ekgHistory')) || [];
+      const jsonStr = JSON.stringify(historyData, null, 2);
+      const blob = new Blob([jsonStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const dateTime = getFormattedDateTime();
+      a.download = `ECG-interpreter-${dateTime.date}_${dateTime.time}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
+    // Импорт истории из JSON (добавление новых записей)
+    function importHistoryFromJSON(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          if (Array.isArray(importedData)) {
+            const currentData = JSON.parse(localStorage.getItem('ekgHistory')) || [];
+            const merged = currentData.concat(importedData);
+            localStorage.setItem('ekgHistory', JSON.stringify(merged));
+            loadHistory();
+            alert("История успешно импортирована и добавлена.");
+          } else {
+            alert("Неверный формат данных.");
+          }
+        } catch(err) {
+          alert("Ошибка чтения файла JSON.");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // Функция для программного открытия диалога выбора файла JSON
+    function triggerJSONImport() {
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = ".json";
+      fileInput.onchange = function(e) {
+        const file = e.target.files[0];
+        if(file) {
+          importHistoryFromJSON(file);
+        }
+      };
+      fileInput.click();
+    }
+
+    // Функция для группировки истории по датам
     function loadHistory() {
       const data = JSON.parse(localStorage.getItem('ekgHistory')) || [];
+      const grouped = {};
+      data.forEach((record, index) => {
+        if (!grouped[record.date]) {
+          grouped[record.date] = [];
+        }
+        record._index = index;
+        grouped[record.date].push(record);
+      });
+      const historyList = document.getElementById('historyList');
       historyList.innerHTML = '';
-      if(data.length === 0) {
+      if (data.length === 0) {
         historyList.innerHTML = '<p>История пуста.</p>';
       } else {
-        data.forEach((record, index) => {
-          const div = document.createElement('div');
-          div.className = 'record';
-          div.innerHTML = `
-            <div style="flex:1;">
-              <input type="checkbox" data-index="${index}">
-              <strong>${record.fio}, ${record.date}</strong>
-            </div>
-            <div>
-              <button class="export-record-btn" data-index="${index}">Экспорт</button>
-              <button class="delete-btn" data-index="${index}">Удалить</button>
-            </div>
-          `;
-          historyList.appendChild(div);
-        });
+        for (let date in grouped) {
+          const details = document.createElement('details');
+          details.open = true;
+          const summary = document.createElement('summary');
+          summary.textContent = date;
+          details.appendChild(summary);
+          grouped[date].forEach(record => {
+            const div = document.createElement('div');
+            div.className = 'record';
+            div.innerHTML = `
+              <div style="flex:1;">
+                <input type="checkbox" data-index="${record._index}">
+                <strong>${record.fio} - ${record.time}</strong>
+              </div>
+              <div>
+                <button class="export-record-btn btn-green" data-index="${record._index}">Экспорт</button>
+                <button class="delete-btn btn-red" data-index="${record._index}">Удалить</button>
+              </div>
+            `;
+            details.appendChild(div);
+          });
+          historyList.appendChild(details);
+        }
       }
     }
 
-    // Удаление записи по индексу с подтверждением
+    // Функция калькулятора ЭОС (восстановлена)
+    function calcEos() {
+      var val1 = parseFloat(document.getElementById('val1').value);
+      var val2 = parseFloat(document.getElementById('val2').value);
+      var otv1 = document.getElementById('otv1').value;
+      var otv2 = document.getElementById('otv2').value;
+      if (isNaN(val1) || isNaN(val2) || val1 === 0 || val2 === 0) {
+        alert('Введите корректные значения для Высоты R – Глубины S.');
+        return;
+      }
+      if (otv1 === otv2) {
+        alert('Выберите разные отведения.');
+        return;
+      }
+      var coords1 = getCoords(val1, otv1);
+      var coords2 = getCoords(val2, otv2);
+      var res = getResultByCoords(coords1.x, coords1.y, coords2.x, coords2.y);
+      if (res.error) {
+        alert('Ошибка вычисления.');
+        return;
+      }
+      var angle = Math.round(res.angle * 10) / 10;
+      var resultText;
+      if (angle >= 0 && angle < 90) resultText = `Нормограмма, угол α = ${angle}°`;
+      else if (angle >= 90 && angle <= 180) resultText = `Правограмма, угол α = ${angle}°`;
+      else if (angle < 0 && angle >= -90) resultText = `Левограмма, угол α = ${angle}°`;
+      else if (angle < -90 && angle >= -180) resultText = `Не определяется, угол α = ${angle}°`;
+      else resultText = `Нет данных, угол α = ${angle}°`;
+      document.getElementById('eosCalcResult').innerHTML = `Результат: ${resultText}`;
+      document.getElementById('eos').value = resultText;
+    }
+    function getCoords(val, otv) {
+      var otvs = [150, 30, 270, 0, 300, 240];
+      var otv_deg = (val > 0) ? otvs[otv] : (otvs[otv] + 180) % 360;
+      var x = Math.abs(val) * Math.cos(otv_deg * Math.PI / 180);
+      var y = Math.abs(val) * Math.sin(otv_deg * Math.PI / 180);
+      return { x: x, y: y };
+    }
+    function getResultByCoords(x1, y1, x2, y2) {
+      if ((x1 * y2 - y1 * x2) === 0) {
+        return { error: 1 };
+      }
+      var x = (y2 * x1 * x1 + y2 * y1 * y1 - y1 * x2 * x2 - y1 * y2 * y2) / (x1 * y2 - y1 * x2);
+      var y = (y1 !== 0) ? (x1 * x1 + y1 * y1 - x1 * x) / y1 : (x2 * x2 + y2 * y2 - x2 * x) / y2;
+      var r = Math.sqrt(x * x + y * y);
+      var angle = -Math.atan2(y, x) * 180 / Math.PI;
+      return { error: null, angle: angle, len: r };
+    }
+
+    // Удаление записи с подтверждением
     function deleteRecord(index) {
-      if(confirm("Вы точно хотите удалить эту запись?")) {
+      if (confirm("Вы точно хотите удалить эту запись?")) {
         const historyData = JSON.parse(localStorage.getItem('ekgHistory')) || [];
         historyData.splice(index, 1);
         localStorage.setItem('ekgHistory', JSON.stringify(historyData));
@@ -716,47 +920,26 @@
     function exportRecordToWord(index) {
       const historyData = JSON.parse(localStorage.getItem('ekgHistory')) || [];
       const record = historyData[index];
-      if(!record) return;
-      let content = `<h1 style="text-align:center;">Интерпретация ЭКГ</h1>`;
-      content += `<h3>${record.fio}, ${record.date}</h3>`;
-      content += `<table border="1" cellspacing="0" cellpadding="5" style="width:100%; border-collapse:collapse;">`;
-      content += `<tr><td><strong>Оценка вольтажа</strong></td><td>${record.voltage}</td></tr>`;
-      content += `<tr><td><strong>Наличие волн (P, f, F)</strong></td><td>${record.waves}</td></tr>`;
-      content += `<tr><td><strong>ЧСС</strong></td><td>${record.heartRate}</td></tr>`;
-      content += `<tr><td><strong>Регулярность Р-Р</strong></td><td>${record.rrP}</td></tr>`;
-      content += `<tr><td><strong>Регулярность R-R</strong></td><td>${record.rrR}</td></tr>`;
-      content += `<tr><td><strong>Связь Р с QRS</strong></td><td>${record.pQrsRelation}</td></tr>`;
-      content += `<tr><td><strong>ЭОС</strong></td><td>${record.eos}</td></tr>`;
-      content += `<tr><td><strong>Р (ширина)</strong></td><td>${record.pWidth}</td></tr>`;
-      content += `<tr><td><strong>Р (амплитуда)</strong></td><td>${record.pAmplitude}</td></tr>`;
-      content += `<tr><td><strong>Р (морфология)</strong></td><td>${record.pMorphology}</td></tr>`;
-      content += `<tr><td><strong>Интервал PR</strong></td><td>${record.prInterval}</td></tr>`;
-      content += `<tr><td><strong>Сегмент PR</strong></td><td>${record.prSegment}</td></tr>`;
-      content += `<tr><td><strong>Комплекс QRS</strong></td><td>${record.qrsType} (${record.qrsDuration})</td></tr>`;
-      content += `<tr><td><strong>Сегмент ST</strong></td><td>${record.stSegment}</td></tr>`;
-      content += `<tr><td><strong>Т-волна</strong></td><td>${record.tWave}</td></tr>`;
-      content += `<tr><td><strong>Интервал QT</strong></td><td>${record.qtInterval}</td></tr>`;
-      content += `<tr><td><strong>U-волна</strong></td><td>${record.uWave}</td></tr>`;
-      content += `<tr><td><strong>Другие признаки</strong></td><td>${record.otherSigns}</td></tr>`;
-      content += `<tr><td><strong>Заключение</strong></td><td>${record.conclusion}</td></tr>`;
-      content += `</table>`;
+      if (!record) return;
+      let content = exportRecordContent(record);
       let header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
                    "xmlns:w='urn:schemas-microsoft-com:office:word' " +
                    "xmlns='http://www.w3.org/TR/REC-html40'>" +
                    "<head><meta charset='utf-8'><title>Экспорт ЭКГ</title></head><body>";
       let footer = "</body></html>";
       let sourceHTML = header + content + footer;
+      let fileName = `ЭКГ_${record.fio}_${record.date}_${record.time}.doc`;
       let source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
       let fileDownload = document.createElement("a");
       document.body.appendChild(fileDownload);
       fileDownload.href = source;
-      fileDownload.download = `ЭКГ_${record.fio}_${record.date}.doc`;
+      fileDownload.download = fileName;
       fileDownload.click();
       document.body.removeChild(fileDownload);
     }
 
-    // Обработчики событий для истории
-    historyList.addEventListener('click', function(e) {
+    // Обработчики для истории (без остановки всплытия)
+    document.getElementById('historyList').addEventListener('click', function(e) {
       if(e.target.classList.contains('delete-btn')) {
         const idx = e.target.getAttribute('data-index');
         deleteRecord(idx);
@@ -766,19 +949,94 @@
       }
     });
 
-    document.getElementById('exportSelected').addEventListener('click', exportSelectedToWord);
-    document.getElementById('exportHistory').addEventListener('click', exportHistoryToWord);
-    exportWordBtn.addEventListener('click', exportToWord);
+    // Обработчики экспорта и импорта JSON (кнопки внизу)
+    document.getElementById('exportJSON').addEventListener('click', exportHistoryToJSON);
+    document.getElementById('importJSONBtn').addEventListener('click', triggerJSONImport);
 
-    // Обработчик для экспорта сравнения в Word
+    // Обработчики для экспорта истории и выбранных записей в Word, а также сравнения
+    document.getElementById('exportHistory').addEventListener('click', exportHistoryToWord);
+    document.getElementById('exportSelected').addEventListener('click', exportSelectedToWord);
+    document.getElementById('exportWord').addEventListener('click', exportToWord);
     document.getElementById('exportCompare').addEventListener('click', exportComparisonToWord);
+
+    // Обработчик для сравнения выбранных записей
+    document.getElementById('compareBtn').addEventListener('click', function() {
+      const checkboxes = document.querySelectorAll('#historyList input[type="checkbox"]:checked');
+      if(checkboxes.length < 2) {
+        alert('Выберите минимум две записи для сравнения.');
+        return;
+      }
+      const historyData = JSON.parse(localStorage.getItem('ekgHistory')) || [];
+      const selectedRecords = [];
+      checkboxes.forEach(cb => {
+        const index = cb.getAttribute('data-index');
+        selectedRecords.push(historyData[index]);
+      });
+      let table = `<table class="compare-table">`;
+      table += `<tr><th>Параметр</th>`;
+      selectedRecords.forEach(record => {
+        table += `<th>${record.fio}<br>${record.date} ${record.time}</th>`;
+      });
+      table += `</tr>`;
+      for (let key in exportMap) {
+        table += `<tr><td><strong>${exportMap[key]}</strong></td>`;
+        selectedRecords.forEach(record => {
+          let value = "";
+          if(key === "qrsType") {
+            value = record.qrsType + " (" + record.qrsDuration + ")";
+          } else {
+            value = record[key] || "";
+          }
+          table += `<td>${value}</td>`;
+        });
+        table += `</tr>`;
+      }
+      table += `</table>`;
+      document.getElementById('compareContainer').innerHTML = table;
+      document.getElementById('compareSection').style.display = 'block';
+      document.getElementById('compareSection').scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Обработчик для закрытия сравнения
     document.getElementById('closeCompare').addEventListener('click', function() {
-      compareSection.style.display = 'none';
+      document.getElementById('compareSection').style.display = 'none';
+    });
+
+    // Обработчик для удаления выбранных записей
+    document.getElementById('deleteSelected').addEventListener('click', function() {
+      const checkboxes = document.querySelectorAll('#historyList input[type="checkbox"]:checked');
+      if (checkboxes.length === 0) {
+        alert("Не выбраны записи для удаления.");
+        return;
+      }
+      if(!confirm("Вы точно хотите удалить выбранные записи?")) return;
+      const historyData = JSON.parse(localStorage.getItem('ekgHistory')) || [];
+      const indices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index')));
+      indices.sort((a, b) => b - a);
+      indices.forEach(idx => {
+        historyData.splice(idx, 1);
+      });
+      localStorage.setItem('ekgHistory', JSON.stringify(historyData));
+      loadHistory();
+    });
+
+    // Обработчик для очистки истории
+    document.getElementById('clearHistory').addEventListener('click', function() {
+      if(confirm("Вы точно хотите очистить всю историю?")) {
+        localStorage.removeItem('ekgHistory');
+        loadHistory();
+      }
+    });
+
+    // Обработчик для очистки формы
+    document.getElementById('clearForm').addEventListener('click', function() {
+      document.getElementById('ekgForm').reset();
     });
 
     // Обработчик для сохранения формы (форма НЕ очищается)
-    form.addEventListener('submit', function(e) {
+    document.getElementById('ekgForm').addEventListener('submit', function(e) {
       e.preventDefault();
+      const dateTime = getFormattedDateTime();
       const formData = {
         fio: document.getElementById('fio').value,
         voltage: document.getElementById('voltage').value,
@@ -801,86 +1059,13 @@
         uWave: document.getElementById('uWave').value,
         otherSigns: document.getElementById('otherSigns').value,
         conclusion: document.getElementById('conclusion').value,
-        date: getFormattedDate()
+        date: dateTime.date,
+        time: dateTime.time
       };
       const historyData = JSON.parse(localStorage.getItem('ekgHistory')) || [];
       historyData.push(formData);
       localStorage.setItem('ekgHistory', JSON.stringify(historyData));
       loadHistory();
-      // Форма не очищается после сохранения, чтобы можно было вносить корректировки
-    });
-
-    clearFormBtn.addEventListener('click', function() {
-      form.reset();
-    });
-
-    document.getElementById('clearHistory').addEventListener('click', function() {
-      if(confirm("Вы точно хотите очистить всю историю?")) {
-        localStorage.removeItem('ekgHistory');
-        loadHistory();
-      }
-    });
-
-    // Обработчик для сравнения выбранных записей
-    compareBtn.addEventListener('click', function() {
-      const checkboxes = historyList.querySelectorAll('input[type="checkbox"]:checked');
-      if(checkboxes.length < 2) {
-        alert('Выберите минимум две записи для сравнения.');
-        return;
-      }
-      const historyData = JSON.parse(localStorage.getItem('ekgHistory')) || [];
-      const selectedRecords = [];
-      checkboxes.forEach(cb => {
-        const index = cb.getAttribute('data-index');
-        selectedRecords.push(historyData[index]);
-      });
-      let table = `<table class="compare-table">`;
-      table += `<tr><th>Параметр</th>`;
-      selectedRecords.forEach(record => {
-        table += `<th>${record.fio}<br>${record.date}</th>`;
-      });
-      table += `</tr>`;
-      const parameters = [
-        { label: "Оценка вольтажа", key: "voltage" },
-        { label: "Наличие волн (P, f, F)", key: "waves" },
-        { label: "ЧСС", key: "heartRate" },
-        { label: "Регулярность Р-Р", key: "rrP" },
-        { label: "Регулярность R-R", key: "rrR" },
-        { label: "Связь Р с QRS", key: "pQrsRelation" },
-        { label: "ЭОС", key: "eos" },
-        { label: "Р (ширина)", key: "pWidth" },
-        { label: "Р (амплитуда)", key: "pAmplitude" },
-        { label: "Р (морфология)", key: "pMorphology" },
-        { label: "Интервал PR", key: "prInterval" },
-        { label: "Сегмент PR", key: "prSegment" },
-        { label: "Комплекс QRS", key: "qrsType" },
-        { label: "Комплекс QRS длительность", key: "qrsDuration" },
-        { label: "Сегмент ST", key: "stSegment" },
-        { label: "Т-волна", key: "tWave" },
-        { label: "Интервал QT", key: "qtInterval" },
-        { label: "U-волна", key: "uWave" },
-        { label: "Другие признаки", key: "otherSigns" },
-        { label: "Заключение", key: "conclusion" }
-      ];
-      parameters.forEach(param => {
-        table += `<tr><td><strong>${param.label}</strong></td>`;
-        selectedRecords.forEach(record => {
-          let value = record[param.key] || "";
-          if(param.key === "qrsType") {
-            value = record["qrsType"] + " (" + record["qrsDuration"] + ")";
-          }
-          table += `<td>${value}</td>`;
-        });
-        table += `</tr>`;
-      });
-      table += `</table>`;
-      compareContainer.innerHTML = table;
-      compareSection.style.display = 'block';
-    });
-
-    document.getElementById('exportCompare').addEventListener('click', exportComparisonToWord);
-    document.getElementById('closeCompare').addEventListener('click', function() {
-      compareSection.style.display = 'none';
     });
 
     window.onload = loadHistory;
